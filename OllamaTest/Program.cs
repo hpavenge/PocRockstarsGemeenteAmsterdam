@@ -1,31 +1,36 @@
-﻿using System;
-using System.Net.Http;
-using System.Text;
-using System.Text.Json;
-using System.Threading.Tasks;
+﻿using Microsoft.SemanticKernel;
+using Microsoft.SemanticKernel.Connectors.Ollama;
 
 class Program
 {
     static async Task Main()
     {
-        var prompt = "Hoi, hoe gaat het vandaag?";
+        // 1. Kernel builder maken
+        var builder = Kernel.CreateBuilder();
 
-        using var client = new HttpClient { BaseAddress = new Uri("http://localhost:11434/") };
+        // 2. Ollama koppelen
+        builder.AddOllamaTextGeneration(
+            modelId: "llama3.1:8b",
+            endpoint: new Uri("http://localhost:11434")
+        );
 
-        var requestBody = new
-        {
-            model = "llama3.1:8b", // Zorg dat je dit model hebt gepulled
-            prompt = prompt,
-            stream = false
-        };
+        var kernel = builder.Build();
 
-        var json = JsonSerializer.Serialize(requestBody);
-        var content = new StringContent(json, Encoding.UTF8, "application/json");
+        // 3. Prompt functie aanmaken
+        var chatFunction = kernel.CreateFunctionFromPrompt(
+            """
+            Jij bent een vriendelijke chatbot van Gemeente Amsterdam.
+            Antwoord in het Nederlands, kort en duidelijk.
+            Vraag: {{$input}}
+            """
+        );
 
-        var response = await client.PostAsync("api/generate", content);
-        var responseString = await response.Content.ReadAsStringAsync();
+        // 4. Input en resultaat
+        var vraag = "Wat kun je me vertellen over parkeren in Amsterdam?";
+        var result = await kernel.InvokeAsync(chatFunction, new() { ["input"] = vraag });
 
-        Console.WriteLine("=== Ollama Response ===");
-        Console.WriteLine(responseString);
+        Console.WriteLine($"Vraag: {vraag}");
+        Console.WriteLine("Antwoord:");
+        Console.WriteLine(result);
     }
 }

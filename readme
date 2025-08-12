@@ -1,1 +1,45 @@
 Ollama - snel een llm antwoord via hhtp call
+Semantic Kernel toegevoegd - zie uitleg onderstaand
+
+
+Wat is Semantic Kernel (SK)?
+Semantic Kernel is een .NET-library van Microsoft die fungeert als een AI “orchestrator”.
+In plaats van zelf overal HTTP-calls te doen, geeft SK je:
+
+Gemakkelijk model wisselen → Azure OpenAI, Ollama, OpenAI, HuggingFace… met één regel aanpassing.
+
+Prompt templates → prompts netjes beheren en hergebruiken.
+
+Function Calling → AI kan automatisch functies (zoals jouw MCP-tools) aanroepen op basis van een vraag.
+
+Memory → context/gesprekken bewaren en hergebruiken.
+
+Plugins → bundels met AI-functies en externe tools.
+
+Waarom in jouw POC handig
+Omdat we straks meerdere dingen samen willen laten werken:
+
+LLM (Ollama, later misschien Amsterdam-LLM of Azure).
+
+Externe tools (via MCP).
+
+Documenten opvragen (RAG).
+
+Zonder SK moet jij zelf:
+
+Prompt logic schrijven.
+
+Bedenken wanneer welke tool wordt aangeroepen.
+
+Context handmatig meenemen in het gesprek.
+
+Met SK krijg je een framework dat dat netjes organiseert. Je kunt dus sneller schakelen, en later ook makkelijk uitbreiden.
+
+Waarom semantic kernel ? 
+ Waarom dit nu fijn is:
+
+Als je straks een MCP-tool toevoegt, kan SK de keuze “welke functie moet ik nu gebruiken” zelf maken.
+
+Je kunt ook makkelijk een “chain” van prompts maken (bijvoorbeeld: eerst samenvatten, dan vertalen).
+
+Wisselen van Ollama → Azure LLM is één regel aanpassen.
