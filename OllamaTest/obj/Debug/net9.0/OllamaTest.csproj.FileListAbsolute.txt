@@ -1,0 +1,15 @@
+C:\Git\PocRockstarsGemeenteAmsterdam\OllamaTest\bin\Debug\net9.0\OllamaTest.exe
+C:\Git\PocRockstarsGemeenteAmsterdam\OllamaTest\bin\Debug\net9.0\OllamaTest.deps.json
+C:\Git\PocRockstarsGemeenteAmsterdam\OllamaTest\bin\Debug\net9.0\OllamaTest.runtimeconfig.json
+C:\Git\PocRockstarsGemeenteAmsterdam\OllamaTest\bin\Debug\net9.0\OllamaTest.dll
+C:\Git\PocRockstarsGemeenteAmsterdam\OllamaTest\bin\Debug\net9.0\OllamaTest.pdb
+C:\Git\PocRockstarsGemeenteAmsterdam\OllamaTest\obj\Debug\net9.0\OllamaTest.GeneratedMSBuildEditorConfig.editorconfig
+C:\Git\PocRockstarsGemeenteAmsterdam\OllamaTest\obj\Debug\net9.0\OllamaTest.AssemblyInfoInputs.cache
+C:\Git\PocRockstarsGemeenteAmsterdam\OllamaTest\obj\Debug\net9.0\OllamaTest.AssemblyInfo.cs
+C:\Git\PocRockstarsGemeenteAmsterdam\OllamaTest\obj\Debug\net9.0\OllamaTest.csproj.CoreCompileInputs.cache
+C:\Git\PocRockstarsGemeenteAmsterdam\OllamaTest\obj\Debug\net9.0\OllamaTest.sourcelink.json
+C:\Git\PocRockstarsGemeenteAmsterdam\OllamaTest\obj\Debug\net9.0\OllamaTest.dll
+C:\Git\PocRockstarsGemeenteAmsterdam\OllamaTest\obj\Debug\net9.0\refint\OllamaTest.dll
+C:\Git\PocRockstarsGemeenteAmsterdam\OllamaTest\obj\Debug\net9.0\OllamaTest.pdb
+C:\Git\PocRockstarsGemeenteAmsterdam\OllamaTest\obj\Debug\net9.0\OllamaTest.genruntimeconfig.cache
+C:\Git\PocRockstarsGemeenteAmsterdam\OllamaTest\obj\Debug\net9.0\ref\OllamaTest.dll
