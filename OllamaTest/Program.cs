@@ -1,5 +1,10 @@
 ﻿using Microsoft.SemanticKernel;
+using Microsoft.SemanticKernel.Connectors.Ollama;
 using System.Net.Http.Json;
+using System.Text.Json;
+using System.Linq;
+
+public record Passage(int id, string passage, string source, int chunk, double? score);
 
 class Program
 {
@@ -10,7 +15,6 @@ class Program
             FunctionChoiceBehavior = FunctionChoiceBehavior.Auto()
         };
 
-
         var builder = Kernel.CreateBuilder();
         builder.AddOllamaTextGeneration(
             modelId: "llama3.1:8b",
@@ -19,7 +23,7 @@ class Program
 
         var kernel = builder.Build();
 
-        // Native function: weer_vandaag
+        // Tool: weer_vandaag
         var weerTool = kernel.CreateFunctionFromMethod(
             async () =>
             {
@@ -31,7 +35,7 @@ class Program
             description: "Geeft het weer van vandaag terug"
         );
 
-        // Document search tool
+        // Tool: zoek_in_documenten  ➜ GEEF RUW JSON TERUG (niet vooraf samenvoegen)
         var docSearchTool = kernel.CreateFunctionFromMethod(
             async (string query) =>
             {
@@ -46,21 +50,14 @@ class Program
                     return $"[Zoekfout {((int)resp.StatusCode)}] {body}";
                 }
 
-                var results = System.Text.Json.JsonSerializer.Deserialize<List<Dictionary<string, object>>>(body);
-                if (results == null || results.Count == 0) return "Geen resultaten gevonden.";
-
-                var topPassages = string.Join("\n---\n",
-                    results.Select(r => r.TryGetValue("passage", out var p) ? p?.ToString() : "")
-                );
-
-                return topPassages;
+                // Geef raw JSON terug zodat we hieronder netjes kunnen parsen + citeren
+                return body;
             },
             functionName: "zoek_in_documenten",
             description: "Zoekt in gemeentelijke documenten op basis van een query"
         );
 
-
-        // Chatfunctie die SK mag laten beslissen
+        // Chat (fallback)
         var chatFunction = kernel.CreateFunctionFromPrompt(
             """
             Jij bent een vriendelijke chatbot van Gemeente Amsterdam.
@@ -71,18 +68,31 @@ class Program
             settings
         );
 
-        // Input testen
-        /* hacky cracky want ollama ziet function niet andere modellen wel
-        Function calling in Semantic Kernel werkt alleen als:
+        // Synthese-prompt ZONDER {{source}}/{{chunk}} placeholders (die breken SK)
+        var synthesize = kernel.CreateFunctionFromPrompt(
+            """
+            Je bent een assistent voor Gemeente Amsterdam.
+            Antwoord UITSLUITEND op basis van de CONTEXT hieronder.
+            Als het antwoord niet in de context staat, zeg: "Onvoldoende informatie in de beschikbare documenten."
+            Neem aan het eind de gebruikte bron-tags letterlijk over (bijv. [bron: … chunk …]).
 
-        Het model function calling ondersteunt (Ollama-modellen doen dit meestal niet “out of the box” zoals GPT-4/3.5 dat doen via OpenAI’s API).
+            Vraag: {{$vraag}}
 
-        De functie daadwerkelijk geregistreerd is in de Kernel voordat je de prompt uitvoert.
+            --- CONTEXT ---
+            {{$context}}
+            --- EINDE CONTEXT ---
+            """
+        );
 
-        De settings (FunctionChoiceBehavior.Auto) en de model-output structuur juist zijn.
+        // Kleine helper om PDF-artefacts op te schonen
+        static string Clean(string s) =>
+            string.IsNullOrWhiteSpace(s) ? "" :
+            s.Replace("-\n", "")   // afbrekingen
+             .Replace("\r", " ")
+             .Replace("\n", " ")
+             .Replace("  ", " ");
 
-        Omdat Ollama-modellen geen native “function calling”-protocol hebben, denkt SK nu: “Oké, ik kan die functie theoretisch gebruiken… maar ik kan net zo goed zelf iets verzinnen.”
-        */
+        // ===== Testvraag =====
         var vraag = "Welk uitgangspunt staat er voor de projecten in het woningbouwplan document van Amsterdam?";
 
         if (vraag.ToLower().Contains("weer"))
@@ -90,17 +100,54 @@ class Program
             var weerResult = await kernel.InvokeAsync(weerTool);
             Console.WriteLine(weerResult.GetValue<string>());
         }
-        else if (vraag.ToLower().Contains("regeling") || vraag.ToLower().Contains("document") || vraag.ToLower().Contains("beleid"))
+        else if (vraag.ToLower().Contains("regeling") ||
+                 vraag.ToLower().Contains("document") ||
+                 vraag.ToLower().Contains("beleid") ||
+                 vraag.ToLower().Contains("woningbouw") ||
+                 vraag.ToLower().Contains("plan"))
         {
+            // 1) Zoek passages
             var docResult = await kernel.InvokeAsync(docSearchTool, new() { ["query"] = vraag });
-            Console.WriteLine("Zoekresultaten:");
-            Console.WriteLine(docResult.GetValue<string>());
+            var raw = docResult.GetValue<string>() ?? "";
+            var jsonOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+
+            List<Passage>? passages = null;
+            try
+            {
+                passages = JsonSerializer.Deserialize<List<Passage>>(raw, jsonOptions);
+            }
+            catch
+            {
+                // als server plain tekst gaf, gebruiken we die als context
+            }
+
+            // 2) Bouw context met nette bron-tags
+            string context;
+            if (passages is { Count: > 0 })
+            {
+                context = string.Join("\n---\n", passages
+                    .Where(p => p is not null)
+                    .Take(3)
+                    .Select(p => $"[bron: {p.source} chunk {p.chunk}]\n{Clean(p.passage)}"));
+            }
+            else
+            {
+                context = Clean(raw); // fallback
+            }
+
+            // 3) Synthese (samenvatting/antwoord + bron-tags)
+            var answer = await kernel.InvokeAsync(synthesize, new()
+            {
+                ["vraag"] = vraag,
+                ["context"] = context
+            });
+
+            Console.WriteLine(answer);
         }
         else
         {
             var result = await kernel.InvokeAsync(chatFunction, new() { ["input"] = vraag });
             Console.WriteLine(result);
         }
-
     }
 }

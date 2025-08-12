@@ -6,10 +6,11 @@ Wat staat er in het parkeerbeleid van Amsterdam? → documentzoek-tool. (mini RA
 
 Vertel iets over Amsterdam. → gewone LLM.
 
+Techstack
 Ollama - snel een llm antwoord via hhtp call
 Semantic Kernel toegevoegd - zie uitleg onderstaand
 fake mcp python server toegevoegd - zie uitleg onderstaand
-document tool uitgebreid in pythong zodat je vragen kan stellen over de documenten in docs
+document tool uitgebreid in pythong zodat je vragen kan stellen over de documenten in docs (rag retrieval augmented generation)
 
 Wat is Semantic Kernel (SK)?
 Semantic Kernel is een .NET-library van Microsoft die fungeert als een AI “orchestrator”.
