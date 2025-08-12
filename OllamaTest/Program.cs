@@ -1,5 +1,4 @@
 ﻿using Microsoft.SemanticKernel;
-using Microsoft.SemanticKernel.Connectors.Ollama;
 using System.Net.Http.Json;
 
 class Program
@@ -32,6 +31,35 @@ class Program
             description: "Geeft het weer van vandaag terug"
         );
 
+        // Document search tool
+        var docSearchTool = kernel.CreateFunctionFromMethod(
+            async (string query) =>
+            {
+                using var http = new HttpClient();
+                var url = $"http://localhost:5001/zoek_in_documenten?q={Uri.EscapeDataString(query)}&k=3";
+
+                var resp = await http.GetAsync(url);
+                var body = await resp.Content.ReadAsStringAsync();
+
+                if (!resp.IsSuccessStatusCode)
+                {
+                    return $"[Zoekfout {((int)resp.StatusCode)}] {body}";
+                }
+
+                var results = System.Text.Json.JsonSerializer.Deserialize<List<Dictionary<string, object>>>(body);
+                if (results == null || results.Count == 0) return "Geen resultaten gevonden.";
+
+                var topPassages = string.Join("\n---\n",
+                    results.Select(r => r.TryGetValue("passage", out var p) ? p?.ToString() : "")
+                );
+
+                return topPassages;
+            },
+            functionName: "zoek_in_documenten",
+            description: "Zoekt in gemeentelijke documenten op basis van een query"
+        );
+
+
         // Chatfunctie die SK mag laten beslissen
         var chatFunction = kernel.CreateFunctionFromPrompt(
             """
@@ -44,8 +72,6 @@ class Program
         );
 
         // Input testen
-        var vraag = "Hoe is het weer vandaag?";
-
         /* hacky cracky want ollama ziet function niet andere modellen wel
         Function calling in Semantic Kernel werkt alleen als:
 
@@ -57,19 +83,24 @@ class Program
 
         Omdat Ollama-modellen geen native “function calling”-protocol hebben, denkt SK nu: “Oké, ik kan die functie theoretisch gebruiken… maar ik kan net zo goed zelf iets verzinnen.”
         */
+        var vraag = "Welk uitgangspunt staat er voor de projecten in het woningbouwplan document van Amsterdam?";
+
         if (vraag.ToLower().Contains("weer"))
         {
             var weerResult = await kernel.InvokeAsync(weerTool);
-            Console.WriteLine($"Vraag: {vraag}");
-            Console.WriteLine("Antwoord:");
             Console.WriteLine(weerResult.GetValue<string>());
+        }
+        else if (vraag.ToLower().Contains("regeling") || vraag.ToLower().Contains("document") || vraag.ToLower().Contains("beleid"))
+        {
+            var docResult = await kernel.InvokeAsync(docSearchTool, new() { ["query"] = vraag });
+            Console.WriteLine("Zoekresultaten:");
+            Console.WriteLine(docResult.GetValue<string>());
         }
         else
         {
             var result = await kernel.InvokeAsync(chatFunction, new() { ["input"] = vraag });
-            Console.WriteLine($"Vraag: {vraag}");
-            Console.WriteLine("Antwoord:");
             Console.WriteLine(result);
         }
+
     }
 }
