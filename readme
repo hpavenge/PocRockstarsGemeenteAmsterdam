@@ -1,5 +1,6 @@
 Ollama - snel een llm antwoord via hhtp call
 Semantic Kernel toegevoegd - zie uitleg onderstaand
+fake mcp python server toegevoegd - zie uitleg onderstaand
 
 
 Wat is Semantic Kernel (SK)?
@@ -43,3 +44,26 @@ Als je straks een MCP-tool toevoegt, kan SK de keuze “welke functie moet ik nu
 Je kunt ook makkelijk een “chain” van prompts maken (bijvoorbeeld: eerst samenvatten, dan vertalen).
 
 Wisselen van Ollama → Azure LLM is één regel aanpassen.
+
+MCP
+MCP = een universele manier om AI-apps en externe functies/datasets aan elkaar te koppelen.
+Je hoeft tools maar één keer te schrijven, en daarna kunnen meerdere AI-clients ze gebruiken zonder extra werk.
+
+🔧 Hoe werkt dat in de praktijk?
+Een MCP Server:
+
+Is een proces (bijv. Python-script, Node-app, .NET-app) dat één of meerdere tools aanbiedt.
+
+Houdt zich aan het MCP-protocol (bepaalt hoe functies worden beschreven en aangeroepen).
+
+Kan van alles doen: data ophalen, berekeningen maken, externe API’s aanroepen, of documenten doorzoeken.
+
+Een MCP Client:
+
+Is de kant die de AI-app runt (bijv. jouw .NET Semantic Kernel-app).
+
+Vraagt de MCP-server: “Welke tools heb je?”
+
+Stuurt inputs naar die tools en krijgt outputs terug.
+
+Combineert dit met de LLM-output.
